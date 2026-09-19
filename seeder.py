@@ -22,6 +22,7 @@ async def add_players_to_database(db:db_dependency):
     players = get_players()
     log_status = True
     players_dict = []
+    chunk_size = 1000
 
     stmt = select(Players).limit(1)
     result = await db.execute(stmt)
@@ -35,7 +36,9 @@ async def add_players_to_database(db:db_dependency):
                                     "player_last_name" : player["last_name"],
                                     "is_active" : player["is_active"]})
 
-            await db.execute(insert(Players), players_dict)
+            for i in range(0, len(players_dict), chunk_size):
+                chunk = players_dict[i:i + chunk_size]
+                await db.execute(insert(Players), chunk)
             await db.commit()
 
 
@@ -62,6 +65,7 @@ async def add_teams_to_database(db:db_dependency):
     teams = get_teams()
     log_status = True
     teams_dict = []
+    chunk_size = 1000
 
     stmt = select(Teams).limit(1)
     result = await db.execute(stmt)
@@ -73,8 +77,11 @@ async def add_teams_to_database(db:db_dependency):
                 teams_dict.append({"team_id" : team["id"],
                                 "team_name" : team["full_name"],
                                 "abbreviation" : team["abbreviation"]})
-            await db.execute(insert(Teams), teams_dict)
+            for i in range(0, len(teams_dict), chunk_size):
+                chunk = teams_dict[i:i + chunk_size]
+                await db.execute(insert(Teams), chunk)
             await db.commit()
+
         except Exception as e:
             log_status = False
             await db.rollback()
@@ -108,7 +115,9 @@ def get_season_years_list():
 async def add_teams_game_logs(db:db_dependency):
     log_status = True
     season_id_list = get_season_years_list()
+    chunk_size = 1000
     downloaded_data = 0
+
     try:
         for season_id in season_id_list:
 
@@ -157,8 +166,11 @@ async def add_teams_game_logs(db:db_dependency):
                                             "personal_fouls_drawn" : logs["PFD"],
                                             "points" : logs["PTS"]})
                 if teams_logs_dict:
-                    await db.execute(insert(TeamsGameLogs), teams_logs_dict)
+                    for i in range(0, len(teams_logs_dict), chunk_size):
+                        chunk = teams_logs_dict[i:i + chunk_size]
+                        await db.execute(insert(TeamsGameLogs), chunk)
                     await db.commit()
+
                     downloaded_data += len(teams_logs_dict)
             await sleep(2)
         
@@ -185,6 +197,8 @@ async def add_players_game_logs(db:db_dependency):
     log_status = True
     season_id_list = get_season_years_list()
     downloaded_data = 0
+    chunk_size = 1000
+
     try:
         for season_id in season_id_list:
             stmt = select(PlayersGameLogs).where(PlayersGameLogs.season == season_id).limit(1)
@@ -233,7 +247,9 @@ async def add_players_game_logs(db:db_dependency):
                                             "personal_fouls_drawn" : logs["PFD"],
                                             "points" : logs["PTS"]})
                 if players_logs_dict:
-                    await db.execute(insert(PlayersGameLogs), players_logs_dict)
+                    for i in range(0, len(players_logs_dict), chunk_size):
+                        chunk = players_logs_dict[i:i + chunk_size]
+                        await db.execute(insert(PlayersGameLogs), chunk)
                     await db.commit()
                     downloaded_data += len(players_logs_dict)
             await sleep(2)
@@ -259,7 +275,7 @@ async def add_players_game_logs(db:db_dependency):
 playee = get_players()
 
 for x in playee:
-    if x["full_name"] == "Kevin Willis":
+    if x["id"] == 1643016:
         print(x)
 print(len(playee))
 #788

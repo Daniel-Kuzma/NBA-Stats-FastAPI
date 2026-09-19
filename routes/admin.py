@@ -21,7 +21,7 @@ router = APIRouter(
 async def load_historical_data(db: db_dependency):
     await add_teams_to_database(db)
     await add_players_to_database(db)
-    # await add_players_game_logs(db)
-    # await add_teams_game_logs(db)
+    await add_players_game_logs(db)
+    await add_teams_game_logs(db)
     
     
