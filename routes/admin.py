@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Annotated
 from database import LocalSession
 from pydantic import BaseModel
-from seeder import add_players_game_logs, add_players_to_database, add_teams_game_logs, add_teams_to_database
+from loader import add_players_game_logs, add_players_to_database, add_teams_game_logs, add_teams_to_database
 from starlette import status
 
 async def get_db():
