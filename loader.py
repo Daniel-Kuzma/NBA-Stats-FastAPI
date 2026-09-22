@@ -63,7 +63,6 @@ async def add_players_to_database(db:db_dependency):
         await db.rollback()
         print(f"Error trying to add log: {e}")
 
-
 async def add_teams_to_database(db:db_dependency):
     teams = get_teams()
     log_status = True
