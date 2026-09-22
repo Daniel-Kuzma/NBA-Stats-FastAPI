@@ -4,6 +4,7 @@ from typing import Annotated
 from database import LocalSession
 from pydantic import BaseModel
 from loader import add_players_game_logs, add_players_to_database, add_teams_game_logs, add_teams_to_database
+from seeder import check_active_players
 from starlette import status
 
 async def get_db():
@@ -19,9 +20,10 @@ router = APIRouter(
 
 @router.get("/load_historical_data", status_code = status.HTTP_200_OK)
 async def load_historical_data(db: db_dependency):
-    await add_teams_to_database(db)
-    await add_players_to_database(db)
-    await add_players_game_logs(db)
-    await add_teams_game_logs(db)
+    # await add_teams_to_database(db)
+    # await add_players_to_database(db)
+    # await add_players_game_logs(db)
+    # await add_teams_game_logs(db)
+    await check_active_players(db)
     
     

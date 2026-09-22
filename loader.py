@@ -1,6 +1,6 @@
 from nba_api.stats.static.players import get_players
 from nba_api.stats.static.teams import get_teams
-from nba_api.stats.endpoints import teamgamelogs, playergamelogs
+from nba_api.stats.endpoints import teamgamelogs, playergamelogs, commonallplayers
 from database import LocalSession
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends
@@ -62,6 +62,7 @@ async def add_players_to_database(db:db_dependency):
     except Exception as e:
         await db.rollback()
         print(f"Error trying to add log: {e}")
+
 
 async def add_teams_to_database(db:db_dependency):
     teams = get_teams()
