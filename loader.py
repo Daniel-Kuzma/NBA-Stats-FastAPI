@@ -197,7 +197,7 @@ async def add_players_game_logs(db:db_dependency):
             season = result.scalar()
             if season is None:
 
-                player_game_logs = playergamelogs.PlayerGameLogs(season_nullable = "2025-26", season_type_nullable = "Regular Season")
+                player_game_logs = playergamelogs.PlayerGameLogs(season_nullable = season_id, season_type_nullable = "Regular Season")
                 player_game_logs_dict = player_game_logs.get_normalized_dict()
                 players_logs = player_game_logs_dict["PlayerGameLogs"]
 
