@@ -14,7 +14,7 @@ class Users(Base):
     password : Mapped[str]
     email : Mapped[str]
     role : Mapped[str] = mapped_column(Enum("user", "admin", name = "enum_name"), default = "user")
-    user_status  : Mapped[bool]
+    user_status  : Mapped[bool] = mapped_column(default = 1)
 
 class Teams(Base):
     __tablename__ = "nba_teams"
