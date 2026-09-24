@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 from typing import Annotated
 from database import LocalSession
-from routes import admin
+from routes import admin, auth
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from contextlib import asynccontextmanager
 from seeder import upload_new_player_logs, upload_new_teams_logs, check_active_players
@@ -38,3 +38,4 @@ async def healthy_check():
     return {"healthy_check" : "Welcome"}
 
 app.include_router(admin.router)
+app.include_router(auth.router)
