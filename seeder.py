@@ -62,14 +62,6 @@ def missing_players_tracker(db: db_dependency):
                 })
     return missing_players
 
-
-# {'PERSON_ID': 203507, 'DISPLAY_LAST_COMMA_FIRST': 'Antetokounmpo, Giannis',
-#  'DISPLAY_FIRST_LAST': 'Giannis Antetokounmpo', 'ROSTERSTATUS': 1,
-#  'FROM_YEAR': '2013', 'TO_YEAR': '2026', 'PLAYERCODE': 'giannis_antetokounmpo',
-#  'PLAYER_SLUG': 'giannis_antetokounmpo', 'TEAM_ID': 1610612748, 'TEAM_CITY': 'Miami',
-#  'TEAM_NAME': 'Heat', 'TEAM_ABBREVIATION': 'MIA', 'TEAM_SLUG': 'heat',
-#  'TEAM_CODE': 'heat', 'GAMES_PLAYED_FLAG': 'Y', 'OTHERLEAGUE_EXPERIENCE_CH': '00'}
-
 def get_actual_season():
     actual_month = datetime.now().month
     if actual_month >= 10:
@@ -160,45 +152,46 @@ async def upload_new_player_logs(db:db_dependency):
         if x not in respond_plyer_log_tuple:
             missing_player_logs.append(x)    
 
+    api_logs_dict_lookup = {(x["PLAYER_ID"], x["GAME_ID"]): x for x in game_logs}
     players_logs_dict = []
 
     try:
-        for log in missing_player_logs:
-            for logs in game_logs:
-                if log[0] == logs["PLAYER_ID"] and log[1] == logs["GAME_ID"]:
-                    win_or_lose = (logs["WL"] == "W")
-                    fg_pct = logs["FG_PCT"] * 100
-                    fg3_pct = logs["FG3_PCT"] * 100
-                    ft_pct = logs["FT_PCT"] * 100
-                    date_time = datetime.fromisoformat(logs["GAME_DATE"])
-                    players_logs_dict.append({"season" : logs["SEASON_YEAR"],
-                                            "player_id" : logs["PLAYER_ID"],
-                                            "team_id" : logs["TEAM_ID"],
-                                            "game_id" : logs["GAME_ID"],
-                                            "game_date" : date_time,
-                                            "matchup" : logs["MATCHUP"],
-                                            "is_win" : win_or_lose,
-                                            "minutes_played" : logs["MIN"],
-                                            "field_goals_made" : logs["FGM"],
-                                            "field_goals_attempted" : logs["FGA"],
-                                            "field_goal_percentage" : fg_pct,
-                                            "three_point_field_goals_made" : logs["FG3M"],
-                                            "three_point_field_goals_attempted" : logs["FG3A"],
-                                            "three_point_field_goal_percentage" : fg3_pct,
-                                            "free_throws_made" : logs["FTM"],
-                                            "free_throws_attempted" : logs["FTA"],
-                                            "free_throw_percentage" : ft_pct,
-                                            "offensive_rebounds" : logs["OREB"],
-                                            "defensive_rebounds" : logs["DREB"],
-                                            "rebounds" : logs["REB"],
-                                            "assists" : logs["AST"],
-                                            "turnovers" : logs["TOV"],
-                                            "steals" : logs["STL"],
-                                            "blocks" : logs["BLK"],
-                                            "blocks_against" : logs["BLKA"],
-                                            "personal_fouls" : logs["PF"],
-                                            "personal_fouls_drawn" : logs["PFD"],
-                                            "points" : logs["PTS"]})
+        for log_tuple in missing_player_logs:
+            logs = api_logs_dict_lookup[log_tuple]
+            
+            win_or_lose = (logs["WL"] == "W")
+            fg_pct = logs["FG_PCT"] * 100
+            fg3_pct = logs["FG3_PCT"] * 100
+            ft_pct = logs["FT_PCT"] * 100
+            date_time = datetime.fromisoformat(logs["GAME_DATE"])
+            players_logs_dict.append({"season" : logs["SEASON_YEAR"],
+                                    "player_id" : logs["PLAYER_ID"],
+                                    "team_id" : logs["TEAM_ID"],
+                                    "game_id" : logs["GAME_ID"],
+                                    "game_date" : date_time,
+                                    "matchup" : logs["MATCHUP"],
+                                    "is_win" : win_or_lose,
+                                    "minutes_played" : logs["MIN"],
+                                    "field_goals_made" : logs["FGM"],
+                                    "field_goals_attempted" : logs["FGA"],
+                                    "field_goal_percentage" : fg_pct,
+                                    "three_point_field_goals_made" : logs["FG3M"],
+                                    "three_point_field_goals_attempted" : logs["FG3A"],
+                                    "three_point_field_goal_percentage" : fg3_pct,
+                                    "free_throws_made" : logs["FTM"],
+                                    "free_throws_attempted" : logs["FTA"],
+                                    "free_throw_percentage" : ft_pct,
+                                    "offensive_rebounds" : logs["OREB"],
+                                    "defensive_rebounds" : logs["DREB"],
+                                    "rebounds" : logs["REB"],
+                                    "assists" : logs["AST"],
+                                    "turnovers" : logs["TOV"],
+                                    "steals" : logs["STL"],
+                                    "blocks" : logs["BLK"],
+                                    "blocks_against" : logs["BLKA"],
+                                    "personal_fouls" : logs["PF"],
+                                    "personal_fouls_drawn" : logs["PFD"],
+                                    "points" : logs["PTS"]})
             if players_logs_dict:
                 for i in range(0, len(players_logs_dict), chunk_size):
                     chunk = players_logs_dict[i:i + chunk_size]
