@@ -212,7 +212,7 @@ async def upload_new_player_logs(db:db_dependency):
         log_status = False
 
     try:
-        new_log = StatusTLog(log_description = "Add new players logs",
+        new_log = StatusTLog(log_description = "Upload new players logs",
                             downloaded_records = downloaded_data,
                             completed = log_status,
                             log_type = "players_log")
@@ -223,7 +223,7 @@ async def upload_new_player_logs(db:db_dependency):
         print(f"Error trying add log: {e}")
 
 
-async def upload_new_player_logs(db:db_dependency):
+async def upload_new_teams_logs(db:db_dependency):
     chunk_size = 1000
     downloaded_data = 0
     log_status = True
@@ -232,65 +232,61 @@ async def upload_new_player_logs(db:db_dependency):
     game_logs = game_logs_upload.get_normalized_dict()["TeamGameLogs"]
     game_logs_tuple = set()
     for x in game_logs:
-        is_win = (x["WL"] == "W")
-        game_logs_tuple.add((x["PLAYER_ID"], is_win))
+        game_logs_tuple.add((x["GAME_ID"], x["TEAM_ID"]))
 
-    stmt_players_log = select(TeamsGameLogs).where(TeamsGameLogs.season == get_actual_season())
-    result_player_log = await db.execute(stmt_players_log)
-    respond_plyer_log = result_player_log.scalars()
-    respond_plyer_log_tuple = set()
-    for x in respond_plyer_log:
-        respond_plyer_log_tuple.add((x.game_id, x.is_win))
+    stmt_teams_log = select(TeamsGameLogs).where(TeamsGameLogs.season == get_actual_season())
+    result_teams_log = await db.execute(stmt_teams_log)
+    respond_teams_log = result_teams_log.scalars()
+    respond_teams_log_tuple = set()
+    for x in respond_teams_log:
+        respond_teams_log_tuple.add((x.game_id, x.team_id))
 
-    missing_player_logs = []
+    missing_teams_logs = []
     for x in game_logs_tuple:
-        if x not in respond_plyer_log_tuple:
-            missing_player_logs.append(x)    
-
+        if x not in respond_teams_log_tuple:
+            missing_teams_logs.append(x)    
+    api_logs_dict_lookup = {(x["GAME_ID"], x["TEAM_ID"]): x for x in game_logs}
     teams_logs_dict = []
-
     try:
-        for log in missing_player_logs:
-            for logs in game_logs:
-                is_win = (logs["WL"] == "W")
-                if log[0] == logs["GAME_ID"] and log[1] == is_win:
-                    win_or_lose = (logs["WL"] == "W")
-                    fg_pct = logs["FG_PCT"] * 100
-                    fg3_pct = logs["FG3_PCT"] * 100
-                    ft_pct = logs["FT_PCT"] * 100
-                    date_time = datetime.fromisoformat(logs["GAME_DATE"])
-                    teams_logs_dict.append({"season" : logs["SEASON_YEAR"],
-                                            "team_id" : logs["TEAM_ID"],
-                                            "game_id" : logs["GAME_ID"],
-                                            "game_date" : date_time,
-                                            "matchup" : logs["MATCHUP"],
-                                            "is_win" : win_or_lose,
-                                            "field_goals_made" : logs["FGM"],
-                                            "field_goals_attempted" : logs["FGA"],
-                                            "field_goal_percentage" : fg_pct,
-                                            "three_point_field_goals_made" : logs["FG3M"],
-                                            "three_point_field_goals_attempted" : logs["FG3A"],
-                                            "three_point_field_goal_percentage" : fg3_pct,
-                                            "free_throws_made" : logs["FTM"],
-                                            "free_throws_attempted" : logs["FTA"],
-                                            "free_throw_percentage" : ft_pct,
-                                            "offensive_rebounds" : logs["OREB"],
-                                            "defensive_rebounds" : logs["DREB"],
-                                            "rebounds" : logs["REB"],
-                                            "assists" : logs["AST"],
-                                            "turnovers" : logs["TOV"],
-                                            "steals" : logs["STL"],
-                                            "blocks" : logs["BLK"],
-                                            "blocks_against" : logs["BLKA"],
-                                            "personal_fouls" : logs["PF"],
-                                            "personal_fouls_drawn" : logs["PFD"],
-                                            "points" : logs["PTS"]})
-            if teams_logs_dict:
-                for i in range(0, len(teams_logs_dict), chunk_size):
-                    chunk = teams_logs_dict[i:i + chunk_size]
-                    await db.execute(insert(TeamsGameLogs), chunk)
-                await db.commit()
-                downloaded_data += len(teams_logs_dict)
+        for log_tuple in missing_teams_logs:
+            logs = api_logs_dict_lookup[log_tuple]  
+            win_or_lose = (logs["WL"] == "W")
+            fg_pct = logs["FG_PCT"] * 100
+            fg3_pct = logs["FG3_PCT"] * 100
+            ft_pct = logs["FT_PCT"] * 100
+            date_time = datetime.fromisoformat(logs["GAME_DATE"])
+            teams_logs_dict.append({"season" : logs["SEASON_YEAR"],
+                                    "team_id" : logs["TEAM_ID"],
+                                    "game_id" : logs["GAME_ID"],
+                                    "game_date" : date_time,
+                                    "matchup" : logs["MATCHUP"],
+                                    "is_win" : win_or_lose,
+                                    "field_goals_made" : logs["FGM"],
+                                    "field_goals_attempted" : logs["FGA"],
+                                    "field_goal_percentage" : fg_pct,
+                                    "three_point_field_goals_made" : logs["FG3M"],
+                                    "three_point_field_goals_attempted" : logs["FG3A"],
+                                    "three_point_field_goal_percentage" : fg3_pct,
+                                    "free_throws_made" : logs["FTM"],
+                                    "free_throws_attempted" : logs["FTA"],
+                                    "free_throw_percentage" : ft_pct,
+                                    "offensive_rebounds" : logs["OREB"],
+                                    "defensive_rebounds" : logs["DREB"],
+                                    "rebounds" : logs["REB"],
+                                    "assists" : logs["AST"],
+                                    "turnovers" : logs["TOV"],
+                                    "steals" : logs["STL"],
+                                    "blocks" : logs["BLK"],
+                                    "blocks_against" : logs["BLKA"],
+                                    "personal_fouls" : logs["PF"],
+                                    "personal_fouls_drawn" : logs["PFD"],
+                                    "points" : logs["PTS"]})
+        if teams_logs_dict:
+            for i in range(0, len(teams_logs_dict), chunk_size):
+                chunk = teams_logs_dict[i:i + chunk_size]
+                await db.execute(insert(TeamsGameLogs), chunk)
+            await db.commit()
+            downloaded_data += len(teams_logs_dict)
         await sleep(2)
     except Exception as e:
         await db.rollback()
@@ -298,10 +294,10 @@ async def upload_new_player_logs(db:db_dependency):
         log_status = False
 
     try:
-        new_log = StatusTLog(log_description = "Add new players logs",
+        new_log = StatusTLog(log_description = "Upload new teams logs",
                             downloaded_records = downloaded_data,
                             completed = log_status,
-                            log_type = "players_log")
+                            log_type = "teams_log")
         db.add(new_log)
         await db.commit()
     except Exception as e:
