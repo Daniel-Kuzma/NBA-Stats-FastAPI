@@ -6,12 +6,14 @@ from pydantic import BaseModel
 from loader import add_players_game_logs, add_players_to_database, add_teams_game_logs, add_teams_to_database
 from seeder import check_active_players, set_all_players_teams, upload_new_player_logs, upload_new_teams_logs
 from starlette import status
+from routes.auth import get_current_user
 
 async def get_db():
     async with LocalSession() as db:
         yield db
 
 db_dependency = Annotated[AsyncSession, Depends(get_db)]
+user_dependency = Annotated[dict, Depends(get_current_user)]
 
 router = APIRouter(
     prefix = "/admin",
@@ -19,7 +21,9 @@ router = APIRouter(
 )
 
 @router.get("/load_historical_data", status_code = status.HTTP_200_OK)
-async def load_historical_data(db: db_dependency):
+async def load_historical_data(user: user_dependency, db: db_dependency):
+    if user.get("role") != "admin":
+        raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail = "You have not access to this page")
     await add_teams_to_database(db)
     await add_players_to_database(db)
     await add_teams_game_logs(db)
