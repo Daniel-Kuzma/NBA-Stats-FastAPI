@@ -37,5 +37,5 @@ app = FastAPI(lifespan = lifespan)
 async def healthy_check():
     return {"healthy_check" : "Welcome"}
 
-app.include_router(admin.router)
+app.include_router(admin.router, prefix = "/admin", tags=["admin"])
 app.include_router(auth.router)
