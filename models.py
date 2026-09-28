@@ -29,6 +29,7 @@ class Players(Base):
     player_id : Mapped[int] = mapped_column(unique = True)
     player_name : Mapped[str]
     player_last_name : Mapped[str]
+    display_name : Mapped[str]
     player_team : Mapped[int] = mapped_column(ForeignKey("nba_teams.team_id"), nullable = True)
     is_active : Mapped[bool]
 
