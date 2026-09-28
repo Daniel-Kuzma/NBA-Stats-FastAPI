@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete 
 from routes.auth import get_current_user
 from starlette import status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from routes.auth import bcrypt_context
 
 async def get_db():
@@ -28,7 +28,7 @@ class PasswordRequest(BaseModel):
     new_password : str
 
 class DeleteUserRequest(BaseModel):
-    password : str #= Path(example = "Pass password to confirm that you want to delete account")
+    password : str = Field(description = "Pass password to confirm that you want to delete account")
 
 router = APIRouter()
 
