@@ -35,6 +35,7 @@ async def add_players_to_database(db:db_dependency):
                 players_dict.append({"player_id" : player["id"],
                                     "player_name" : player["first_name"],
                                     "player_last_name" : player["last_name"],
+                                    "display_name" : player["first_name"] + " " + player["last_name"],
                                     "is_active" : player["is_active"]})
 
             players_dict += missing_players_tracker(db=db)

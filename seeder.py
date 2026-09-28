@@ -58,6 +58,7 @@ def missing_players_tracker(db: db_dependency):
                     "player_id": player_id,
                     "player_name": first_name,
                     "player_last_name": last_name,
+                    "display_name" : first_name + " " + last_name,
                     "is_active": True 
                 })
     return missing_players
