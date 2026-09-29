@@ -95,9 +95,6 @@ async def create_new_user(db:db_dependency, request: RequestUser):
         await db.rollback()
         raise HTTPException(status_code = status.HTTP_406_NOT_ACCEPTABLE, detail = f"Can not create user: {e}")
 
-# user_dependency = Annotated[dict, Depends(get_current_user)]
-
-
 
 
 
