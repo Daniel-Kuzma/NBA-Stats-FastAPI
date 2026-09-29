@@ -37,7 +37,7 @@ class UserFavoritePlayer(Base):
     __tablename__ = "user_favorite_player"
     id : Mapped[int] = mapped_column(primary_key = True, index = True)
     user_id : Mapped[int] = mapped_column(ForeignKey("users.id"))
-    player_id : Mapped[int] = mapped_column(ForeignKey("nba_players.id"))
+    player_id : Mapped[int] = mapped_column(ForeignKey("nba_players.player_id"))
 
 class UserFavoriteTeam(Base):
     __tablename__ = "user_favorite_teams"
