@@ -45,7 +45,7 @@ async def show_user_information(db : db_dependency, user : user_dependency):
                 "role": result.role,
                 "user_status": "active" if result.user_status else "deactivate"}
     except Exception as e:
-        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail = f"Unexpected problem: {e}")
+        raise HTTPException(status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail = f"Unexpected problem: {e}")
 
 @router.put("/change-user-information", status_code = status.HTTP_204_NO_CONTENT)
 async def change_user_information(db: db_dependency, user : user_dependency, request : UserChangeInformationRequest):
@@ -59,7 +59,7 @@ async def change_user_information(db: db_dependency, user : user_dependency, req
         await db.commit()
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, detail = f"Unexpected problem: {e}")
+        raise HTTPException(status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail = f"Unexpected problem: {e}")
 
 @router.put("/change-password", status_code = status.HTTP_204_NO_CONTENT)
 async def change_user_password(db : db_dependency, user : user_dependency, request : PasswordRequest):
@@ -74,7 +74,7 @@ async def change_user_password(db : db_dependency, user : user_dependency, reque
             raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail = "You pass bad password")
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, detail = f"Unexpected problem: {e}")
+        raise HTTPException(status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail = f"Unexpected problem: {e}")
 
 @router.delete("/delete-user-account", status_code = status.HTTP_204_NO_CONTENT)
 async def delete_user_account(db : db_dependency, user : user_dependency, request : DeleteUserRequest):
@@ -88,5 +88,5 @@ async def delete_user_account(db : db_dependency, user : user_dependency, reques
             raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail = "You pass bad password")
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail = f"Unexpected problem: {e}")
+        raise HTTPException(status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail = f"Unexpected problem: {e}")
 
