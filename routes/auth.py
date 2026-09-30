@@ -52,6 +52,8 @@ async def authenticate_user(user : str, password : str, db : db_dependency):
         return False
     if bcrypt_context.verify(password, user_responds.password) == False:
         return False 
+    if not user_responds.user_status:
+        return False
     return user_responds
 
 async def create_jwt_token(username : str, id : int, role : str, expired_time : timedelta):

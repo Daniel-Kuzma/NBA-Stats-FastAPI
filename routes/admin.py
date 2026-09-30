@@ -81,7 +81,7 @@ async def get_all_user(db : db_dependency, user : user_dependency):
     except Exception as e:
         raise HTTPException(status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail = f"Unexpected problem: {e}")
 
-@router.delete("delete-user{user_id}", status_code = status.HTTP_204_NO_CONTENT)
+@router.delete("/delete-user{user_id}", status_code = status.HTTP_204_NO_CONTENT)
 async def delete_user(db : db_dependency, user : user_dependency, user_id : int):
     try:
         if user.get("role") != "admin":
