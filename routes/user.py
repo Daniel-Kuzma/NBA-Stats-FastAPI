@@ -63,11 +63,23 @@ async def delete_favorite_player(db : db_dependency, user : user_dependency, dis
 @router.get("/user-favorite-players", status_code = status.HTTP_200_OK)
 async def user_favorite_players(db : db_dependency, user : user_dependency):
     try:
-        stmt_user_favorite_players = await db.execute(select(UserFavoritePlayer).where(UserFavoritePlayer.user_id == user.get("id")))
-        result = stmt_user_favorite_players.scalars()
-        if result is False:
+        stmt_user_favorite_players = await db.execute(
+            select(UserFavoritePlayer.id,
+                   Players.display_name,
+                   Teams.team_name,
+                   func.round(func.avg(PlayersGameLogs.points), 1).label("avg_points"),
+                   func.round(func.avg(PlayersGameLogs.assists), 1).label("avg_assist"),
+                   func.round(func.avg(PlayersGameLogs.steals), 1).label("avg_steals"))
+            .join(Players, UserFavoritePlayer.player_id == Players.player_id)
+            .join(Teams, Players.player_team == Teams.team_id)
+            .join(PlayersGameLogs, UserFavoritePlayer.player_id == PlayersGameLogs.player_id)
+            .where(UserFavoritePlayer.user_id == user.get("id"), PlayersGameLogs.season == get_actual_season())
+            .group_by(UserFavoritePlayer.id, Players.display_name, Teams.team_name))
+        
+        result = stmt_user_favorite_players.mappings().all()
+        if not result:
             return {"detail" : "You need to add favorite players"}
-        return result.all()
+        return result
     except Exception as e:
         raise HTTPException(status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail = f"Unexpected error : {e}")
 
@@ -117,11 +129,21 @@ async def delete_favorite_player(db : db_dependency, user : user_dependency, tea
 @router.get("user-favorite-teams")
 async def user_favorite_teams(db : db_dependency, user : user_dependency):
     try:
-        stmt_favorite_teams = await db.execute(select(UserFavoriteTeam).where(UserFavoriteTeam.user_id == user.get("id")))
-        result = stmt_favorite_teams.scalars()
-        if result is False:
+        stmt_favorite_teams = await db.execute(
+            select(UserFavoriteTeam.id,
+                   Teams.team_name,
+                   func.round(func.avg(TeamsGameLogs.points), 1).label("avg_point"),
+                   func.round(func.avg(TeamsGameLogs.steals), 1).label("avg_steals"),
+                   func.round(func.avg(TeamsGameLogs.assists), 1).label("avg_assists"))
+            .join(Teams, UserFavoriteTeam.team_id == Teams.team_id)
+            .join(TeamsGameLogs, UserFavoriteTeam.team_id == TeamsGameLogs.team_id)
+            .where(UserFavoriteTeam.user_id == user.get("id"), TeamsGameLogs.season == get_actual_season())
+            .group_by(UserFavoriteTeam.id, Teams.team_name))
+        
+        result = stmt_favorite_teams.mappings().all()
+        if not result:
             return {"detail" : "No favorite teams add yet"}
-        return result.all()
+        return result
     except Exception as e:
         raise HTTPException(status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail = f"Unexpected error: {e}")
 
