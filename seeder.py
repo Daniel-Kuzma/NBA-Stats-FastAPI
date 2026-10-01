@@ -65,7 +65,8 @@ def missing_players_tracker(db: db_dependency):
 
 def get_actual_season():
     actual_month = datetime.now().month
-    if actual_month >= 10:
+    actual_day = datetime.now().day
+    if actual_month >= 10 and actual_day >= 20:
         year = datetime.now().year
         slice_year = year + 1
         year_string = str(year)
