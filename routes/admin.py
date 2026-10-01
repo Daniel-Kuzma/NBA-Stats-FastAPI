@@ -8,7 +8,7 @@ from seeder import check_active_players, set_all_players_teams, upload_new_playe
 from starlette import status
 from routes.auth import get_current_user
 from sqlalchemy import select, update, delete
-from models import Users
+from models import Users, StatusTLog
 from enum import Enum
 
 async def get_db():
@@ -95,4 +95,11 @@ async def delete_user(db : db_dependency, user : user_dependency, user_id : int)
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail = f"Unexpected problem: {e}")
-        
+
+@router.get("status-logs-from-data-base", status_code = status.HTTP_200_OK)
+async def get_status_logs(user : user_dependency, db : db_dependency):
+    if user.get("role") == "admin":
+        raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail = "You have not access to this endpoint")
+    stmt_logs = await db.execute(select(StatusTLog))
+    result = stmt_logs.scalars()
+    return result
