@@ -7,6 +7,7 @@ import pytest
 import models
 from routes.auth import bcrypt_context
 from routes.auth import get_current_user, get_db
+from datetime import datetime
 
 SQLALCHEMY_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 engine = create_async_engine(
@@ -113,7 +114,7 @@ async def test_data_player_logs():
         player_id = 1,
         team_id = 1,
         game_id = "00234",
-        game_date = "2025-03-09 00:00:00",
+        game_date = datetime(2025, 3, 9),
         matchup = "HOU vs. CLE",
         is_win = True,
         minutes_played = 30,
@@ -146,11 +147,11 @@ async def test_data_player_logs():
 
 @pytest_asyncio.fixture
 async def test_data_team_logs():
-    team_game_log = models.PlayersGameLogs(
+    team_game_log = models.TeamsGameLogs(
         season = "2025-26",
         team_id = 1,
         game_id = "00234",
-        game_date = "2025-03-09 00:00:00",
+        game_date = datetime(2025, 3, 9),
         matchup = "HOU vs. CLE",
         is_win = True,
         field_goals_made = 40,
