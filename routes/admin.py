@@ -47,7 +47,7 @@ async def change_user_status(db : db_dependency, user : user_dependency, user_id
     if user.get("role") != "admin":
         raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail = "You have not access to this endpoint")
     stmt = await db.execute(select(Users).filter(Users.id == user_id).limit(1))
-    result = stmt.scalars()
+    result = stmt.scalar()
     if result is None:
         raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, detail = "User with this id dose not exist")
     try:
