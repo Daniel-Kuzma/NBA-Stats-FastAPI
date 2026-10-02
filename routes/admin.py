@@ -43,13 +43,14 @@ async def load_historical_data(user: user_dependency, db: db_dependency):
 
 @router.put("/change-user-status/{user_id}", status_code = status.HTTP_204_NO_CONTENT)
 async def change_user_status(db : db_dependency, user : user_dependency, user_id : int, new_user_status : bool):
+    
+    if user.get("role") != "admin":
+        raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail = "You have not access to this endpoint")
+    stmt = await db.execute(select(Users).filter(Users.id == user_id).limit(1))
+    result = stmt.scalars()
+    if result is None:
+        raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, detail = "User with this id dose not exist")
     try:
-        if user.get("role") != "admin":
-            raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail = "You have not access to this endpoint")
-        stmt = await db.execute(select(Users).filter(Users.id == user_id).limit(1))
-        result = stmt.scalars()
-        if result is None:
-            raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, detail = "User with this id dose not exist")
         await db.execute(update(Users).where(Users.id == user_id).values(user_status = new_user_status))
         await db.commit()
     except Exception as e:
@@ -57,13 +58,14 @@ async def change_user_status(db : db_dependency, user : user_dependency, user_id
 
 @router.put("/change-user-role/{user_id}", status_code = status.HTTP_204_NO_CONTENT)
 async def change_user_role(user : user_dependency, db : db_dependency, user_id : int, new_user_role : UserRoleEnum):
+    
+    if user.get("role") != "admin":
+        raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail = "You have not access to this endpoint")
+    stmt = await db.execute(select(Users).filter(Users.id == user_id).limit(1))
+    result = stmt.scalars()
+    if result is None:
+        raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, detail = "User with this id dose not exist")
     try:
-        if user.get("role") != "admin":
-            raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail = "You have not access to this endpoint")
-        stmt = await db.execute(select(Users).filter(Users.id == user_id).limit(1))
-        result = stmt.scalars()
-        if result is None:
-            raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, detail = "User with this id dose not exist")
         await db.execute(update(Users).where(Users.id == user_id).values(role = new_user_role))
         await db.commit()
     except Exception as e:
@@ -72,34 +74,37 @@ async def change_user_role(user : user_dependency, db : db_dependency, user_id :
 
 @router.get("/all_user", status_code = status.HTTP_200_OK)
 async def get_all_user(db : db_dependency, user : user_dependency):
+    if user.get("role") != "admin":
+        raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail = "You have not access to this endpoint")
     try:
-        if user.get("role") != "admin":
-            raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail = "You have not access to this endpoint")
         stmt = await db.execute(select(Users))
         result = stmt.scalars()
         return result.all()
     except Exception as e:
         raise HTTPException(status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail = f"Unexpected problem: {e}")
 
-@router.delete("/delete-user{user_id}", status_code = status.HTTP_204_NO_CONTENT)
+@router.delete("/delete-user/{user_id}", status_code = status.HTTP_204_NO_CONTENT)
 async def delete_user(db : db_dependency, user : user_dependency, user_id : int):
+    if user.get("role") != "admin":
+        raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail = "You have not access to this endpoint")
+    stmt = await db.execute(select(Users).filter(Users.id == user_id).limit(1))
+    result = stmt.scalar()
+    if result is None:
+        raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, detail = "User with this id dose not exist")
     try:
-        if user.get("role") != "admin":
-            raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail = "You have not access to this endpoint")
-        stmt = await db.execute(select(Users).filter(Users.id == user_id).limit(1))
-        result = stmt.scalar()
-        if result is None:
-            raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, detail = "User with this id dose not exist")
         await db.execute(delete(Users).where(Users.id == user_id))
         await db.commit()
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail = f"Unexpected problem: {e}")
 
-@router.get("status-logs-from-data-base", status_code = status.HTTP_200_OK)
+@router.get("/status-logs-from-data-base", status_code = status.HTTP_200_OK)
 async def get_status_logs(user : user_dependency, db : db_dependency):
-    if user.get("role") == "admin":
+    if user.get("role") != "admin":
         raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail = "You have not access to this endpoint")
-    stmt_logs = await db.execute(select(StatusTLog))
-    result = stmt_logs.scalars()
-    return result
+    try: 
+        stmt_logs = await db.execute(select(StatusTLog))
+        result = stmt_logs.scalars()
+        return result
+    except Exception as e:
+        raise HTTPException(status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail = f"Unexpect error: {e}")
