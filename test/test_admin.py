@@ -16,7 +16,7 @@ async def test_access_to_admin_page(test_data_users):
     request_2 = {"new_user_role" : "user"}
     respons_1 = client.put("/admin/change-user-status/1", params = request_1)
     respons_2 = client.put("/admin/change-user-role/1", params = request_2)
-    respons_3 = client.get("/admin/all_user")
+    respons_3 = client.get("/admin/all-users")
     respons_4 = client.delete("/admin/delete-user/1")
     respons_5 = client.get("/admin/status-logs-from-data-base")
     try: 
@@ -44,6 +44,42 @@ async def test_change_user_status_with_noexist_user(test_data_users):
     respons = client.put("/admin/change-user-status/999", params = request)
     assert respons.status_code == status.HTTP_400_BAD_REQUEST
 
+@pytest.mark.asyncio
+async def test_change_user_role(test_data_users):
+    request = {"new_user_role" : "user"}
+    respons = client.put("/admin/change-user-role/1", params = request)
+    assert respons.status_code == status.HTTP_204_NO_CONTENT
+    db = TestingSessionLocal()
+    model = await db.execute(select(Users.role).where(Users.id == 1).limit(1))
+    result = model.scalar()
+    assert result == "user"
 
+@pytest.mark.asyncio
+async def test_change_user_role_with_noexist_user(test_data_users):
+    request = {"new_user_role" : "user"}
+    respons = client.put("/admin/change-user-role/999", params = request)
+    assert respons.status_code == status.HTTP_400_BAD_REQUEST
 
+@pytest.mark.asyncio
+async def test_get_all_users(test_data_users):
+    respons = client.get("/admin/all-users")
+    assert respons.status_code == status.HTTP_200_OK
 
+@pytest.mark.asyncio
+async def test_delete_user(test_data_users):
+    respons = client.delete("/admin/delete-user/1")
+    assert respons.status_code == status.HTTP_204_NO_CONTENT
+    db = TestingSessionLocal()
+    model = await db.execute(select(Users).where(Users.id == 1).limit(1))
+    result = model.one_or_none()
+    assert result == None
+
+@pytest.mark.asyncio
+async def test_delete_user_with_noexist_user(test_data_users):
+    respons = client.delete("/admin/delete-user/123")
+    assert respons.status_code == status.HTTP_400_BAD_REQUEST
+
+@pytest.mark.asyncio
+async def test_get_status_logs(test_data_logs):
+    respons = client.get("/admin/status-logs-from-data-base")
+    assert respons.status_code == status.HTTP_200_OK
