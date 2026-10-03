@@ -252,7 +252,7 @@ async def team_stats(db : db_dependency, team_name : str = Path(description = "P
                                                 func.round(cast(func.avg(TeamsGameLogs.free_throw_percentage), Numeric), 2).label("avg free throw percentage")   
                                               ).where(TeamsGameLogs.team_id == result_team_id, TeamsGameLogs.season == season, TeamsGameLogs.matchup.endswith(result_team_abbreviation)))
     team_stats_result = stmt_team_stats.mappings().first()
-    if not team_stats_result:
+    if team_stats_result.get("avg points") == None:
         raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, detail = "Stats not found for this team and this rival in this season")
     
     return team_stats_result
@@ -296,7 +296,7 @@ async def team_stats(db : db_dependency, display_name : str = Path(description =
                                                         func.round(cast(func.avg(PlayersGameLogs.free_throw_percentage), Numeric), 2).label("avg free throw percentage")    
                                               ).where(PlayersGameLogs.player_id == result_player_id, PlayersGameLogs.season == season, PlayersGameLogs.matchup.endswith(result_team_abbreviation)))
     player_stats_result_against = stmt_player_stats_against.mappings().first()
-    if not player_stats_result_against:
+    if player_stats_result_against.get("avg points") == None:
         raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, detail = "Stats not found for this player and this rival in this season")
     
     return player_stats_result_against
