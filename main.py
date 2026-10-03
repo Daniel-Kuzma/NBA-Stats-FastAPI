@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 from typing import Annotated
 from database import LocalSession
-from routes import admin, auth, user_account, user
+from routes import admin, auth, user_account, user, create_user
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from contextlib import asynccontextmanager
 from seeder import upload_new_player_logs, upload_new_teams_logs, check_active_players
@@ -41,3 +41,4 @@ app.include_router(admin.router, prefix = "/admin", tags=["admin"])
 app.include_router(auth.router)
 app.include_router(user_account.router, prefix = "/account", tags = ["user-account"])
 app.include_router(user.router, prefix = "/user", tags = ["user"])
+app.include_router(create_user.router, prefix = "/sing-in", tags = ["create-account"])
