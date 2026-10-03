@@ -260,7 +260,7 @@ async def team_stats(db : db_dependency, team_name : str = Path(description = "P
 
 
 @router.get("/show-player-stats-against-team/{display_name}/{against_team}/{season}", status_code = status.HTTP_200_OK)
-async def team_stats(db : db_dependency, display_name : str = Path(description = "Pass full player name and last name"), against_team : str = Path(description = "Pass full team name"), season : str = Path(description = "Specify the season for which you want statistics.", json_schema_extra={"example": "2025-26"})):
+async def player_stats(db : db_dependency, display_name : str = Path(description = "Pass full player name and last name"), against_team : str = Path(description = "Pass full team name"), season : str = Path(description = "Specify the season for which you want statistics.", json_schema_extra={"example": "2025-26"})):
     stmt_player_id = await db.execute(select(Players.player_id).where(Players.display_name == display_name).limit(1))
     result_player_id = stmt_player_id.scalar()
     if result_player_id is None:
