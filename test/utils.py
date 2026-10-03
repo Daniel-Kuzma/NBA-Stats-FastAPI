@@ -5,8 +5,8 @@ from main import app
 from fastapi.testclient import TestClient
 import pytest
 import models
-from routes.auth import bcrypt_context
-from routes.auth import get_current_user, get_db
+from routes.auth import bcrypt_context, get_current_user
+from database import get_db
 from datetime import datetime
 
 SQLALCHEMY_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
@@ -61,8 +61,19 @@ async def test_data_teams():
         team_name = "Huston Rockets",
         abbreviation = "HOU"
     )
+    team_2 = models.Teams(
+        team_id = 2,
+        team_name = "Los Angeles Lakers",
+        abbreviation = "LAL"
+    )
+    team_3 = models.Teams(
+        team_id = 3,
+        team_name = "Cleveland Cavaliers",
+        abbreviation = "CLE"
+    )
+    team_list = [team, team_2, team_3]
     async with TestingSessionLocal() as db:
-        db.add(team)
+        db.add_all(team_list)
         await db.commit()
         await db.refresh(team) 
         yield team
@@ -77,8 +88,17 @@ async def test_data_players():
         player_team = 1,
         is_active = True
     )
+    player_2 = models.Players(
+        player_id = 2,
+        player_name = "James",
+        player_last_name = "Lebron",
+        display_name = "James Lebron",
+        player_team = 2,
+        is_active = True
+    )
+    player_list = [player, player_2]
     async with TestingSessionLocal() as db:
-        db.add(player)
+        db.add_all(player_list)
         await db.commit()
         await db.refresh(player) 
         yield player
@@ -115,12 +135,12 @@ async def test_data_player_logs():
         team_id = 1,
         game_id = "00234",
         game_date = datetime(2025, 3, 9),
-        matchup = "HOU vs. CLE",
+        matchup = "HOU vs. LAL",
         is_win = True,
         minutes_played = 30,
         field_goals_made = 15,
         field_goals_attempted = 20,
-        field_goal_percentage = 60,
+        field_goal_percentage = 80,
         three_point_field_goals_made = 2,
         three_point_field_goals_attempted = 4,
         three_point_field_goal_percentage = 50,
@@ -152,7 +172,7 @@ async def test_data_team_logs():
         team_id = 1,
         game_id = "00234",
         game_date = datetime(2025, 3, 9),
-        matchup = "HOU vs. CLE",
+        matchup = "HOU vs. LAL",
         is_win = True,
         field_goals_made = 40,
         field_goals_attempted = 50,
@@ -183,12 +203,12 @@ async def test_data_team_logs():
 
 @pytest_asyncio.fixture
 async def test_data_logs():
-    logs = models.PlayersGameLogs(
+    logs = models.StatusTLog(
         log_description = "Added some team logs",
         downloaded_records = 1,
-        date = "2025-03-09 00:00:00",
+        date = datetime(2025, 3, 9),
         completed = True,
-        log_type = "team logs"
+        log_type = "teams_log"
     )
     async with TestingSessionLocal() as db:
         db.add(logs)
