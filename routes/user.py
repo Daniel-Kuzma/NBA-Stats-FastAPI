@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, HTTPException, Path
-from database import LocalSession
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete, func, Numeric, cast
 from typing import Annotated
@@ -9,10 +8,7 @@ from pydantic import BaseModel, Field
 from routes.auth import get_current_user
 from models import UserFavoritePlayer, UserFavoriteTeam, Players, Teams, TeamsGameLogs, PlayersGameLogs
 from seeder import get_actual_season, get_season_years_list
-
-async def get_db():
-    async with LocalSession() as db:
-        yield db
+from database import get_db
 
 db_dependency = Annotated[AsyncSession, Depends(get_db)]
 user_dependency = Annotated[dict, Depends(get_current_user)]
@@ -126,15 +122,15 @@ async def delete_favorite_player(db : db_dependency, user : user_dependency, tea
 
     return {"detail" : "Successfully deleted favorite team"}
 
-@router.get("user-favorite-teams")
+@router.get("/user-favorite-teams")
 async def user_favorite_teams(db : db_dependency, user : user_dependency):
     try:
         stmt_favorite_teams = await db.execute(
             select(UserFavoriteTeam.id,
                    Teams.team_name,
-                   func.round(func.avg(TeamsGameLogs.points), 1).label("avg_point"),
-                   func.round(func.avg(TeamsGameLogs.steals), 1).label("avg_steals"),
-                   func.round(func.avg(TeamsGameLogs.assists), 1).label("avg_assists"))
+                   func.round(func.avg(TeamsGameLogs.points), 1).label("avg_points"),
+                   func.round(func.avg(TeamsGameLogs.assists), 1).label("avg_assists"),
+                   func.round(func.avg(TeamsGameLogs.steals), 1).label("avg_steals"))
             .join(Teams, UserFavoriteTeam.team_id == Teams.team_id)
             .join(TeamsGameLogs, UserFavoriteTeam.team_id == TeamsGameLogs.team_id)
             .where(UserFavoriteTeam.user_id == user.get("id"), TeamsGameLogs.season == get_actual_season())
@@ -178,7 +174,7 @@ async def team_stats(db : db_dependency, team_name : str = Path(description = "P
                                                 func.round(cast(func.avg(TeamsGameLogs.free_throw_percentage), Numeric), 2).label("avg free throw percentage")   
                                               ).where(TeamsGameLogs.team_id == result_team_id, TeamsGameLogs.season == season))
     team_stats_result = stmt_team_stats.mappings().first()
-    if not team_stats_result:
+    if team_stats_result.get("avg points") == None:
         raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, detail = "Stats not found for this team and season")
     
     return team_stats_result
@@ -194,7 +190,6 @@ async def player_stats(db : db_dependency, display_name : str = Path(description
         raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, detail = "Season is not exist or will start soon")
 
     stmt_player_stats = await db.execute(select(func.round(cast(func.avg(PlayersGameLogs.points), Numeric), 1).label("avg points"),
-                                                func.round(func.avg(PlayersGameLogs.points), 1).label("avg points"),
                                                 func.round(func.avg(PlayersGameLogs.assists), 1).label("avg assists"),
                                                 func.round(func.avg(PlayersGameLogs.blocks), 1).label("avg blocks"),
                                                 func.round(func.avg(PlayersGameLogs.steals), 1).label("avg steals"),
@@ -215,13 +210,13 @@ async def player_stats(db : db_dependency, display_name : str = Path(description
                                                 func.round(cast(func.avg(PlayersGameLogs.free_throw_percentage), Numeric), 2).label("avg free throw percentage")    
                                               ).where(PlayersGameLogs.player_id == result_player_id, PlayersGameLogs.season == season))
     player_stats_result = stmt_player_stats.mappings().first()
-    if not player_stats_result:
+    if player_stats_result.get("avg points") == None:
         raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, detail = "Stats not found for this player and season")
     
     return player_stats_result
     
 
-@router.get("/show-team-stats/{team_name}/{against_team}/{season}", status_code = status.HTTP_200_OK)
+@router.get("/show-team-stats_against_team/{team_name}/{against_team}/{season}", status_code = status.HTTP_200_OK)
 async def team_stats(db : db_dependency, team_name : str = Path(description = "Pass full team name"), against_team : str = Path(description = "Pass full team name"), season : str = Path(description = "Specify the season for which you want statistics.", json_schema_extra={"example": "2025-26"})):
     stmt_team_id = await db.execute(select(Teams.team_id).where(Teams.team_name == team_name).limit(1))
     result_team_id = stmt_team_id.scalar()

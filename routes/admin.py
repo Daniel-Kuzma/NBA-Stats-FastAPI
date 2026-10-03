@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, Request, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Annotated
-from database import LocalSession
 from pydantic import BaseModel
 from loader import add_players_game_logs, add_players_to_database, add_teams_game_logs, add_teams_to_database
 from seeder import check_active_players, set_all_players_teams, upload_new_player_logs, upload_new_teams_logs
@@ -10,10 +9,7 @@ from routes.auth import get_current_user
 from sqlalchemy import select, update, delete
 from models import Users, StatusTLog
 from enum import Enum
-
-async def get_db():
-    async with LocalSession() as db:
-        yield db
+from database import get_db
 
 db_dependency = Annotated[AsyncSession, Depends(get_db)]
 user_dependency = Annotated[dict, Depends(get_current_user)]
@@ -62,7 +58,7 @@ async def change_user_role(user : user_dependency, db : db_dependency, user_id :
     if user.get("role") != "admin":
         raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail = "You have not access to this endpoint")
     stmt = await db.execute(select(Users).filter(Users.id == user_id).limit(1))
-    result = stmt.scalars()
+    result = stmt.scalar()
     if result is None:
         raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, detail = "User with this id dose not exist")
     try:
@@ -72,7 +68,7 @@ async def change_user_role(user : user_dependency, db : db_dependency, user_id :
         db.rollback()
         raise HTTPException(status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail = f"Unexpected problem: {e}")
 
-@router.get("/all_user", status_code = status.HTTP_200_OK)
+@router.get("/all-users", status_code = status.HTTP_200_OK)
 async def get_all_user(db : db_dependency, user : user_dependency):
     if user.get("role") != "admin":
         raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail = "You have not access to this endpoint")
