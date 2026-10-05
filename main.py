@@ -7,6 +7,9 @@ from routes import admin, auth, user_account, user, create_user
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from contextlib import asynccontextmanager
 from seeder import upload_new_player_logs, upload_new_teams_logs, check_active_players
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import _rate_limit_exceeded_handler
+from limiter import limiter
 
 
 async def upload_teams_logs():
@@ -32,6 +35,8 @@ async def lifespan(app : FastAPI):
     scheduler.shutdown()
 
 app = FastAPI(lifespan = lifespan)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 @app.get("/", status_code = status.HTTP_200_OK)
 async def healthy_check():
