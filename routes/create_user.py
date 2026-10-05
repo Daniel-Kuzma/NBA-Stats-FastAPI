@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Path, Depends
+from fastapi import APIRouter, HTTPException, Path, Depends, Request
 from starlette import status
 from pydantic import BaseModel
 from typing import Annotated
@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
 from routes.auth import bcrypt_context
 from models import Users
+from limiter import limiter
 
 db_dependency = Annotated[AsyncSession, Depends(get_db)]
 
@@ -19,13 +20,14 @@ class RequestUser(BaseModel):
 router = APIRouter()
 
 @router.post("/create_user", status_code = status.HTTP_201_CREATED)
-async def create_new_user(db : db_dependency, request : RequestUser):
+@limiter.limit("2/minute")
+async def create_new_user(db : db_dependency, request_user : RequestUser, request : Request):
     try:
-        new_user = Users(name = request.name,
-                        last_name = request.last_name,
-                        username = request.username,
-                        password = bcrypt_context.hash(request.password),
-                        email = request.email)
+        new_user = Users(name = request_user.name,
+                        last_name = request_user.last_name,
+                        username = request_user.username,
+                        password = bcrypt_context.hash(request_user.password),
+                        email = request_user.email)
         db.add(new_user)
         await db.commit()
     except Exception as e:

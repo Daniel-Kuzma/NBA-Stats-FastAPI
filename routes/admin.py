@@ -10,6 +10,8 @@ from sqlalchemy import select, update, delete
 from models import Users, StatusTLog
 from enum import Enum
 from database import get_db
+from limiter import limiter
+import uuid
 
 db_dependency = Annotated[AsyncSession, Depends(get_db)]
 user_dependency = Annotated[dict, Depends(get_current_user)]
@@ -21,7 +23,8 @@ class UserRoleEnum(str, Enum):
     user = "user"
 
 @router.get("/load_historical_data", status_code = status.HTTP_200_OK)
-async def load_historical_data(user: user_dependency, db: db_dependency):
+@limiter.limit("100/minute")
+async def load_historical_data(user: user_dependency, db: db_dependency, request : Request):
     try:
         if user.get("role") != "admin":
             raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail = "You have not access to this endpoint")
@@ -37,39 +40,42 @@ async def load_historical_data(user: user_dependency, db: db_dependency):
         db.rollback()
         raise HTTPException(status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail = f"Unexpected problem: {e}")
 
-@router.put("/change-user-status/{user_id}", status_code = status.HTTP_204_NO_CONTENT)
-async def change_user_status(db : db_dependency, user : user_dependency, user_id : int, new_user_status : bool):
+@router.put("/change-user-status/{user_public_id}", status_code = status.HTTP_204_NO_CONTENT)
+@limiter.limit("300/minute")
+async def change_user_status(db : db_dependency, user : user_dependency, user_public_id : uuid.UUID, new_user_status : bool, request : Request):
     
     if user.get("role") != "admin":
         raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail = "You have not access to this endpoint")
-    stmt = await db.execute(select(Users).filter(Users.id == user_id).limit(1))
+    stmt = await db.execute(select(Users).filter(Users.public_id == user_public_id).limit(1))
     result = stmt.scalar()
     if result is None:
         raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, detail = "User with this id dose not exist")
     try:
-        await db.execute(update(Users).where(Users.id == user_id).values(user_status = new_user_status))
+        await db.execute(update(Users).where(Users.public_id == user_public_id).values(user_status = new_user_status))
         await db.commit()
     except Exception as e:
         raise HTTPException(status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail = f"Unexpected problem: {e}")
 
-@router.put("/change-user-role/{user_id}", status_code = status.HTTP_204_NO_CONTENT)
-async def change_user_role(user : user_dependency, db : db_dependency, user_id : int, new_user_role : UserRoleEnum):
+@router.put("/change-user-role/{user_public_id}", status_code = status.HTTP_204_NO_CONTENT)
+@limiter.limit("300/minute")
+async def change_user_role(user : user_dependency, db : db_dependency, user_public_id : uuid.UUID, new_user_role : UserRoleEnum, request : Request):
     
     if user.get("role") != "admin":
         raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail = "You have not access to this endpoint")
-    stmt = await db.execute(select(Users).filter(Users.id == user_id).limit(1))
+    stmt = await db.execute(select(Users).filter(Users.public_id == user_public_id).limit(1))
     result = stmt.scalar()
     if result is None:
         raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, detail = "User with this id dose not exist")
     try:
-        await db.execute(update(Users).where(Users.id == user_id).values(role = new_user_role))
+        await db.execute(update(Users).where(Users.public_id == user_public_id).values(role = new_user_role))
         await db.commit()
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail = f"Unexpected problem: {e}")
 
 @router.get("/all-users", status_code = status.HTTP_200_OK)
-async def get_all_user(db : db_dependency, user : user_dependency):
+@limiter.limit("300/minute")
+async def get_all_user(db : db_dependency, user : user_dependency, request : Request):
     if user.get("role") != "admin":
         raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail = "You have not access to this endpoint")
     try:
@@ -79,23 +85,25 @@ async def get_all_user(db : db_dependency, user : user_dependency):
     except Exception as e:
         raise HTTPException(status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail = f"Unexpected problem: {e}")
 
-@router.delete("/delete-user/{user_id}", status_code = status.HTTP_204_NO_CONTENT)
-async def delete_user(db : db_dependency, user : user_dependency, user_id : int):
+@router.delete("/delete-user/{user_public_id}", status_code = status.HTTP_204_NO_CONTENT)
+@limiter.limit("300/minute")
+async def delete_user(db : db_dependency, user : user_dependency, user_public_id : uuid.UUID, request : Request):
     if user.get("role") != "admin":
         raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail = "You have not access to this endpoint")
-    stmt = await db.execute(select(Users).filter(Users.id == user_id).limit(1))
+    stmt = await db.execute(select(Users).filter(Users.public_id == user_public_id).limit(1))
     result = stmt.scalar()
     if result is None:
         raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, detail = "User with this id dose not exist")
     try:
-        await db.execute(delete(Users).where(Users.id == user_id))
+        await db.execute(delete(Users).where(Users.public_id == user_public_id))
         await db.commit()
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail = f"Unexpected problem: {e}")
 
 @router.get("/status-logs-from-data-base", status_code = status.HTTP_200_OK)
-async def get_status_logs(user : user_dependency, db : db_dependency):
+@limiter.limit("300/minute")
+async def get_status_logs(user : user_dependency, db : db_dependency, request : Request):
     if user.get("role") != "admin":
         raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail = "You have not access to this endpoint")
     try: 

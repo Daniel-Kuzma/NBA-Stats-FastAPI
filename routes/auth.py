@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Path, HTTPException
+from fastapi import APIRouter, Depends, Path, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 from pydantic import BaseModel
@@ -12,6 +12,7 @@ from datetime import datetime, timedelta, timezone
 import jwt
 from jwt.exceptions import InvalidTokenError
 from database import get_db
+from limiter import limiter
 
 SECRET_KEY = settings.secret_key
 ALGORITHM = "HS256"
@@ -42,7 +43,7 @@ async def authenticate_user(user : str, password : str, db : db_dependency):
         return False
     return user_responds
 
-async def create_jwt_token(username : str, id : int, role : str, expired_time : timedelta):
+async def create_jwt_token(username : str, id : str, role : str, expired_time : timedelta):
     payload = {"username" : username, "id" : id, "role" : role}
     time_to_expired = datetime.now(timezone.utc) + timedelta(minutes = expired_time)
     payload.update({"exp" : time_to_expired})
@@ -61,22 +62,10 @@ async def get_current_user(token : Annotated[str, Depends(oauth2_scheme)]):
         raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail = "Could not valid user")
 
 @router.post("/token", response_model = Token)
-async def login(request : Annotated[OAuth2PasswordRequestForm, Depends()], db : db_dependency):
-    login_user = await authenticate_user(request.username, request.password, db)
+@limiter.limit("5/minute")
+async def login(request_token : Annotated[OAuth2PasswordRequestForm, Depends()], db : db_dependency, request : Request):
+    login_user = await authenticate_user(request_token.username, request_token.password, db)
     if not login_user:
         raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail = "Password or Username is incorrect")
-    token = await create_jwt_token(login_user.username, login_user.id, login_user.role, 30)
+    token = await create_jwt_token(login_user.username, str(login_user.public_id), login_user.role, 30)
     return {"access_token" : token, "token_type" : "bearer"}
-
-
-
-
-
-
-
-
-    
-
-
-
-
