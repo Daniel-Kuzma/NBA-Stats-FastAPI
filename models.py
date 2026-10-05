@@ -1,13 +1,14 @@
 from sqlalchemy import ForeignKey, Enum, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase
 from datetime import datetime
-
+import uuid
 class Base(DeclarativeBase):
     pass
 
 class Users(Base):
     __tablename__ = "users"
     id : Mapped[int] = mapped_column(primary_key = True, index = True)
+    public_id : Mapped[uuid.UUID] = mapped_column(default = uuid.uuid4, index = True, unique = True)
     name : Mapped[str] 
     last_name : Mapped[str]
     username : Mapped[str] = mapped_column(unique = True)
