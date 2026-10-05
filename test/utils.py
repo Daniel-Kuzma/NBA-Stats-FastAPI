@@ -8,6 +8,7 @@ import models
 from routes.auth import bcrypt_context, get_current_user
 from database import get_db
 from datetime import datetime
+import uuid
 
 SQLALCHEMY_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 engine = create_async_engine(
@@ -22,7 +23,7 @@ async def override_get_db():
         yield db
 
 def override_get_current_user():
-    return {"username": "jan123", "id": 1, "role": "admin"}
+    return {"username": "jan123", "id": "07c206d2-3449-451a-9cd7-86a10f6ec18f", "role": "admin"}
 
 app.dependency_overrides[get_db] = override_get_db
 app.dependency_overrides[get_current_user] = override_get_current_user 
@@ -46,7 +47,8 @@ async def test_data_users():
     password = bcrypt_context.hash("password"),
     email = "jan@jan.pl",
     role = "admin",
-    user_status = True
+    user_status = True,
+    public_id = uuid.UUID("07c206d2-3449-451a-9cd7-86a10f6ec18f")
     )
     async with TestingSessionLocal() as db:
         db.add(user)

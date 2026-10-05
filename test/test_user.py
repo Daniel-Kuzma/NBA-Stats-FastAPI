@@ -8,7 +8,7 @@ app.dependency_overrides[get_db] = override_get_db
 app.dependency_overrides[get_current_user] = override_get_current_user 
 
 @pytest.mark.asyncio
-async def test_add_favorite_player(test_data_players):
+async def test_add_favorite_player(test_data_players, test_data_users):
     respons = client.post("/user/add-favorite-player/James Lebron")
     assert respons.status_code == status.HTTP_201_CREATED
     db = TestingSessionLocal()
@@ -17,17 +17,17 @@ async def test_add_favorite_player(test_data_players):
     assert result != None
 
 @pytest.mark.asyncio
-async def test_add_favorite_player_if_player_is_favorite(test_data_players, test_data_favorite_player):
+async def test_add_favorite_player_if_player_is_favorite(test_data_users, test_data_players, test_data_favorite_player):
     respons = client.post("/user/add-favorite-player/Kevin Durant")
     assert respons.status_code == status.HTTP_406_NOT_ACCEPTABLE
 
 @pytest.mark.asyncio
-async def test_add_favorite_player_if_dose_not_exist(test_data_players):
+async def test_add_favorite_player_if_dose_not_exist(test_data_users, test_data_players):
     respons = client.post("/user/add-favorite-player/Kevin James")
     assert respons.status_code == status.HTTP_400_BAD_REQUEST
 
 @pytest.mark.asyncio
-async def test_delete_favorite_player(test_data_players, test_data_favorite_player):
+async def test_delete_favorite_player(test_data_users, test_data_players, test_data_favorite_player):
     respons = client.delete("/user/delete-favorite-player/Kevin Durant")
     assert respons.status_code == status.HTTP_204_NO_CONTENT
     db = TestingSessionLocal()
@@ -36,17 +36,17 @@ async def test_delete_favorite_player(test_data_players, test_data_favorite_play
     assert result == None
 
 @pytest.mark.asyncio
-async def test_delete_player_if_player_is_not_favorite(test_data_players):
+async def test_delete_player_if_player_is_not_favorite(test_data_users, test_data_players):
     respons = client.delete("/user/delete-favorite-player/James Lebron")
     assert respons.status_code == status.HTTP_406_NOT_ACCEPTABLE
 
 @pytest.mark.asyncio
-async def test_delete_favorite_player_if_dose_not_exist(test_data_players):
+async def test_delete_favorite_player_if_dose_not_exist(test_data_users, test_data_players):
     respons = client.delete("/user/delete-favorite-player/Kevin James")
     assert respons.status_code == status.HTTP_400_BAD_REQUEST
 
 @pytest.mark.asyncio
-async def test_user_favorite_players(test_data_favorite_player, test_data_teams, test_data_players, test_data_player_logs):
+async def test_user_favorite_players(test_data_users, test_data_favorite_player, test_data_teams, test_data_players, test_data_player_logs):
     respons = client.get("/user/user-favorite-players")
     assert respons.status_code == status.HTTP_200_OK
     assert respons.json()[0] == {"id" : 1,
@@ -57,7 +57,7 @@ async def test_user_favorite_players(test_data_favorite_player, test_data_teams,
                                  "avg_steals" : 1.0}
 
 @pytest.mark.asyncio
-async def test_user_favorite_players_if_none_player_is_add(test_data_favorite_player, test_data_teams, test_data_players, test_data_player_logs):
+async def test_user_favorite_players_if_none_player_is_add(test_data_users, test_data_favorite_player, test_data_teams, test_data_players, test_data_player_logs):
     db = TestingSessionLocal()
     await db.execute(delete(models.UserFavoritePlayer).where(models.UserFavoritePlayer.id == 1))
     respons = client.get("/user/user-favorite-players")
@@ -65,7 +65,7 @@ async def test_user_favorite_players_if_none_player_is_add(test_data_favorite_pl
     assert respons.json() == {"detail" : "You need to add favorite players"}
 
 @pytest.mark.asyncio
-async def test_add_favorite_team(test_data_teams):
+async def test_add_favorite_team(test_data_users, test_data_teams):
     respons = client.post("/user/add-favorite-team/Los Angeles Lakers")
     assert respons.status_code == status.HTTP_201_CREATED
     db = TestingSessionLocal()
@@ -74,17 +74,17 @@ async def test_add_favorite_team(test_data_teams):
     assert result != None
 
 @pytest.mark.asyncio
-async def test_add_favorite_team_if_team_is_favorite(test_data_teams, test_data_favorite_team):
+async def test_add_favorite_team_if_team_is_favorite(test_data_users, test_data_teams, test_data_favorite_team):
     respons = client.post("/user/add-favorite-team/Huston Rockets")
     assert respons.status_code == status.HTTP_406_NOT_ACCEPTABLE
 
 @pytest.mark.asyncio
-async def test_add_favorite_team_if_dose_not_exist(test_data_teams):
+async def test_add_favorite_team_if_dose_not_exist(test_data_users, test_data_teams):
     respons = client.post("/user/add-favorite-team/Los Huston Lakers")
     assert respons.status_code == status.HTTP_400_BAD_REQUEST
 
 @pytest.mark.asyncio
-async def test_delete_favorite_team(test_data_teams, test_data_favorite_team):
+async def test_delete_favorite_team(test_data_users, test_data_teams, test_data_favorite_team):
     respons = client.delete("/user/delete-favorite-team/Huston Rockets")
     assert respons.status_code == status.HTTP_204_NO_CONTENT
     db = TestingSessionLocal()
@@ -93,17 +93,17 @@ async def test_delete_favorite_team(test_data_teams, test_data_favorite_team):
     assert result == None
 
 @pytest.mark.asyncio
-async def test_delete_team_if_team_is_not_favorite(test_data_teams):
+async def test_delete_team_if_team_is_not_favorite(test_data_users, test_data_teams):
     respons = client.delete("/user/delete-favorite-team/Los Angeles Lakers")
     assert respons.status_code == status.HTTP_406_NOT_ACCEPTABLE
 
 @pytest.mark.asyncio
-async def test_delete_favorite_team_if_dose_not_exist(test_data_teams):
+async def test_delete_favorite_team_if_dose_not_exist(test_data_users, test_data_teams):
     respons = client.delete("/user/delete-favorite-team/Huston Lakers")
     assert respons.status_code == status.HTTP_400_BAD_REQUEST
 
 @pytest.mark.asyncio
-async def test_user_favorite_teams(test_data_favorite_team, test_data_teams, test_data_team_logs):
+async def test_user_favorite_teams(test_data_users, test_data_favorite_team, test_data_teams, test_data_team_logs):
     respons = client.get("/user/user-favorite-teams")
     assert respons.status_code == status.HTTP_200_OK
     assert respons.json()[0] == {"id" : 1,
@@ -113,7 +113,7 @@ async def test_user_favorite_teams(test_data_favorite_team, test_data_teams, tes
                                  "avg_steals" : 5.0}
 
 @pytest.mark.asyncio
-async def test_user_favorite_players_if_none_player_is_add(test_data_favorite_team, test_data_teams, test_data_team_logs):
+async def test_user_favorite_players_if_none_player_is_add(test_data_users, test_data_favorite_team, test_data_teams, test_data_team_logs):
     db = TestingSessionLocal()
     await db.execute(delete(models.UserFavoriteTeam).where(models.UserFavoriteTeam.team_id == 1))
     respons = client.get("/user/user-favorite-teams")
