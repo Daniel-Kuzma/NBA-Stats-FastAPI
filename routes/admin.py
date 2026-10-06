@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, Request, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Annotated
-from pydantic import BaseModel
 from loader import add_players_game_logs, add_players_to_database, add_teams_game_logs, add_teams_to_database
 from seeder import check_active_players, set_all_players_teams, upload_new_player_logs, upload_new_teams_logs
 from starlette import status
