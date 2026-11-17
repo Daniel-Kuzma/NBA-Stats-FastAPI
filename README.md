@@ -5,7 +5,7 @@
 [![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-D71F00?style=for-the-badge&logo=sqlalchemy&logoColor=white)](https://www.sqlalchemy.org/)
 
 REST API służące do pobierania, analizowania i zarządzania statystykami zawodników oraz drużyn NBA. System automatycznie integruje się z zewnętrznymi źródłami danych (NBA API), agregując logi meczowe i udostępniając je w ujednoliconej formie. 
-Projekt został zbudowany jako wizytówka do portfolio z naciskiem na najlepsze praktyki backendowe: bezpieczeństwo (JWT, Rate Limiting), separację warstw dostępu (UUID dla klientów publicznych, Integer dla relacji wewnętrznych) oraz wysoką wydajność.
+Projekt zawiera: bezpieczeństwo (JWT, Rate Limiting), separację warstw dostępu (UUID dla klientów publicznych, Integer dla relacji wewnętrznych) oraz wysoką wydajność.
 
 ## Główne funkcjonalności
 
@@ -69,3 +69,6 @@ nba-stats-api/
 ├── main.py                 # Punkt wejścia aplikacji FastAPI
 └── requirements.txt        # Zależności projektu
 ```
+## Dalszy rozwój aplikacji
+* rozbudowa panelu administratora o nowe endpoint do obsługi użytkowników (resetowanie hasła)
+* dodanie logów serwerowych
