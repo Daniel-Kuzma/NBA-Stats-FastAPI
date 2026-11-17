@@ -1,24 +1,24 @@
 from test.utils import *
-from routes.admin import get_current_user, get_db
+from database.core import get_db
+from auth.service import get_current_user
 from fastapi import status
-from models import Users, StatusTLog
+from database.models import Users, StatusTLog
 import pytest
 from sqlalchemy import select
-from routes.auth import bcrypt_context
+from auth.service import bcrypt_context
 
 app.dependency_overrides[get_db] = override_get_db
-app.dependency_overrides[get_current_user] = override_get_current_user 
 
 @pytest.mark.asyncio
 async def test_change_user_status(test_data_users):
+    app.dependency_overrides[get_current_user] = override_get_current_user
     respons = client.get("/account/user-information")
     assert respons.status_code == status.HTTP_200_OK
     assert respons.json() == {"name": "Jan",
                               "last_name": "Kowalski",
                               "username": "jan123",
                               "email": "jan@jan.pl",
-                              "role": "admin",
-                              "user_status": "active"}
+                              "role": "user"}
 
 @pytest.mark.asyncio
 async def test_change_user_information(test_data_users):
@@ -27,7 +27,7 @@ async def test_change_user_information(test_data_users):
                "username" : "jan1234567", 
                "email" : "jan@jan.pl"}
     respons = client.put("/account/change-user-information", json = request)
-    assert respons.status_code == status.HTTP_204_NO_CONTENT
+    assert respons.status_code == status.HTTP_200_OK
     db = TestingSessionLocal()
     stmt = await db.execute(select(Users).where(Users.id == 1).limit(1))
     result = stmt.scalar()
@@ -38,7 +38,7 @@ async def test_change_user_password(test_data_users):
     request = {"old_password" : "password",
                "new_password" : "password1"}
     respons = client.put("/account/change-password", json = request)
-    assert respons.status_code == status.HTTP_204_NO_CONTENT
+    assert respons.status_code == status.HTTP_200_OK
     
     db = TestingSessionLocal()
     stmt = await db.execute(select(Users).where(Users.id == 1).limit(1))
@@ -56,11 +56,11 @@ async def test_change_user_status_with_bad_password(test_data_users):
 async def test_delete_user_account(test_data_users):
     request = {"password" : "password"}
     respons = client.request("DELETE", "/account/delete-user-account", json = request)
-    assert respons.status_code == status.HTTP_204_NO_CONTENT
-    db = TestingSessionLocal()
-    stmt = await db.execute(select(Users))
-    result = stmt.scalars()
-    assert result.all() == []
+    assert respons.status_code == status.HTTP_200_OK
+    async with TestingSessionLocal() as db:
+        stmt = await db.execute(select(Users).where(Users.id == 1))
+        result = stmt.scalars()
+        assert result.all() == []
 
 @pytest.mark.asyncio
 async def test_delete_user_account_with_bad_password(test_data_users):

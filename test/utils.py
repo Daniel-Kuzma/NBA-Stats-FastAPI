@@ -2,12 +2,12 @@ import pytest_asyncio
 from sqlalchemy.pool import StaticPool
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from main import app
+from database import models
+from auth.service import get_current_user, bcrypt_context
+from database.core import get_db
 from fastapi.testclient import TestClient
 import pytest
-import models
-from routes.auth import bcrypt_context, get_current_user
-from database import get_db
-from datetime import datetime
+from datetime import datetime, timedelta
 import uuid
 
 SQLALCHEMY_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
@@ -22,11 +22,13 @@ async def override_get_db():
     async with TestingSessionLocal() as db:
         yield db
 
-def override_get_current_user():
-    return {"username": "jan123", "id": "07c206d2-3449-451a-9cd7-86a10f6ec18f", "role": "admin"}
+def override_get_current_user_v2():
+    return {"username": "admin", "id": "70f41b40-a522-4ba8-b1cd-ab6a1ca7febd", "private_id" : 2, "role": "admin"}
 
-app.dependency_overrides[get_db] = override_get_db
-app.dependency_overrides[get_current_user] = override_get_current_user 
+def override_get_current_user():
+    return {"username": "jan123", "id": "07c206d2-3449-451a-9cd7-86a10f6ec18f", "private_id" : 1, "role": "user"}
+
+app.dependency_overrides[get_current_user] = override_get_current_user
 
 client = TestClient(app)
 
@@ -34,7 +36,7 @@ client = TestClient(app)
 async def setup_database():
     async with engine.begin() as conn:
         await conn.run_sync(models.Base.metadata.create_all)
-    yield
+    yield 
     async with engine.begin() as conn:
         await conn.run_sync(models.Base.metadata.drop_all)
 
@@ -46,14 +48,29 @@ async def test_data_users():
     username = "jan123",
     password = bcrypt_context.hash("password"),
     email = "jan@jan.pl",
-    role = "admin",
+    role = "user",
     user_status = True,
     public_id = uuid.UUID("07c206d2-3449-451a-9cd7-86a10f6ec18f")
     )
+
+    user_2 = models.Users(
+    name = "admin",
+    last_name = "admin",
+    username = "admin123",
+    password = bcrypt_context.hash("password"),
+    email = "admin@jan.pl",
+    role = "admin",
+    user_status = True,
+    public_id = uuid.UUID("70f41b40-a522-4ba8-b1cd-ab6a1ca7febd")
+    )
+
+    user_list = [user, user_2]
+    
     async with TestingSessionLocal() as db:
-        db.add(user)
+        db.add_all(user_list)
         await db.commit()
-        await db.refresh(user) 
+        for u in user_list:
+            await db.refresh(u) 
         yield user
 
 @pytest_asyncio.fixture
@@ -77,7 +94,8 @@ async def test_data_teams():
     async with TestingSessionLocal() as db:
         db.add_all(team_list)
         await db.commit()
-        await db.refresh(team) 
+        for t in team_list:
+            await db.refresh(t) 
         yield team
 
 @pytest_asyncio.fixture
@@ -102,7 +120,8 @@ async def test_data_players():
     async with TestingSessionLocal() as db:
         db.add_all(player_list)
         await db.commit()
-        await db.refresh(player) 
+        for p in player_list:
+            await db.refresh(p) 
         yield player
 
 @pytest_asyncio.fixture
